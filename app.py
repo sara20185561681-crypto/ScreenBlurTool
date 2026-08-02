@@ -1,17 +1,17 @@
  import sys
-from PySide6.QtCore import Qt, QRect, QPoint, QSize, QEvent
-from PySide6.QtGui import QPainter, QPen, QColor, QBrush, QImage, QPainterPath, QIcon, QAction
+from PySide6.QtCore import Qt, QRect, QPoint
+from PySide6.QtGui import QPainter, QPen, QColor, QBrush, QPainterPath
 from PySide6.QtWidgets import (QApplication, QWidget, QPushButton, QHBoxLayout, 
-                             QVBoxLayout, QLabel, QFrame, QSlider, QComboBox, QSystemTrayIcon, QMenu)
+                             QVBoxLayout, QLabel, QSlider, QComboBox)
 
 class ResizableBlurItem:
-    def __init__(self, rect, style="Pixelate", opacity=220, radius=0):
+    def __init__(self, rect, style="Pixelate", opacity=220, radius=10):
         self.rect = rect
         self.style = style
         self.opacity = opacity
         self.radius = radius
         self.is_selected = False
-        self.handle_size = 8
+        self.handle_size = 10
 
     def get_handles(self):
         r = self.rect
@@ -91,25 +91,22 @@ class ModernCanvas(QWidget):
             painter.setClipPath(path)
 
             if item.style == "Pixelate":
-                # Simulated pixelation block design
                 painter.fillRect(item.rect, QColor(200, 200, 200, item.opacity))
-                p_size = 12
+                p_size = 14
                 for x in range(item.rect.left(), item.rect.right(), p_size):
                     for y in range(item.rect.top(), item.rect.bottom(), p_size):
-                        shade = (x * 7 + y * 13) % 150 + 50
+                        shade = (x * 11 + y * 17) % 160 + 40
                         painter.fillRect(QRect(x, y, p_size, p_size), QColor(shade, shade, shade, item.opacity))
             elif item.style == "Solid":
                 painter.fillRect(item.rect, QColor(0, 0, 0, item.opacity))
             elif item.style == "Soft Blur":
-                painter.fillRect(item.rect, QColor(100, 100, 100, item.opacity))
+                painter.fillRect(item.rect, QColor(120, 120, 120, item.opacity))
 
             painter.restore()
 
-            # Border
-            painter.setPen(QPen(QColor(0, 255, 200, 180) if item.is_selected else QColor(255, 255, 255, 80), 2))
+            painter.setPen(QPen(QColor(0, 255, 200) if item.is_selected else QColor(255, 255, 255, 100), 2))
             painter.drawPath(path)
 
-            # Handles for selection & resizing
             if item.is_selected:
                 painter.setPen(Qt.NoPen)
                 painter.setBrush(QBrush(QColor(0, 255, 200)))
@@ -169,23 +166,10 @@ class MainControlWindow(QWidget):
         super().__init__()
         self.setWindowTitle("Screen Blur Tool Pro v2.0")
         self.setWindowFlags(Qt.WindowStaysOnTopHint)
-        self.resize(420, 260)
+        self.resize(400, 230)
 
         self.blur_items = []
         self.canvas = ModernCanvas(self)
-
-        # System Tray Integration
-        self.tray_icon = QSystemTrayIcon(self)
-        self.tray_icon.setIcon(self.style().standardIcon(QApplication.style().SP_ComputerIcon))
-        tray_menu = QMenu()
-        show_action = QAction("إظهار لوحة التحكم", self)
-        show_action.triggered.connect(self.show)
-        exit_action = QAction("إغلاق", self)
-        exit_action.triggered.connect(self.close_all)
-        tray_menu.addAction(show_action)
-        tray_menu.addAction(exit_action)
-        self.tray_icon.setContextMenu(tray_menu)
-        self.tray_icon.show()
 
         layout = QVBoxLayout(self)
 
@@ -194,32 +178,28 @@ class MainControlWindow(QWidget):
         title_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(title_label)
 
-        self.status_label = QLabel("اختر نمط التعتيم وابدأ بالتحديد")
+        self.status_label = QLabel("اختر النمط ثم اضغط تعتيم منطقة")
         self.status_label.setStyleSheet("font-size: 12px; color: #666;")
         self.status_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.status_label)
 
-        # Controls Layout
         options_layout = QHBoxLayout()
         
-        # Style Combo
         style_label = QLabel("الشكل:")
         self.style_combo = QComboBox()
         self.style_combo.addItems(["Pixelate", "Solid", "Soft Blur"])
         options_layout.addWidget(style_label)
         options_layout.addWidget(self.style_combo)
 
-        # Radius Slider
-        radius_label = QLabel("الحواف (Radius):")
+        radius_label = QLabel("الحواف:")
         self.radius_slider = QSlider(Qt.Horizontal)
-        self.radius_slider.setRange(0, 50)
+        self.radius_slider.setRange(0, 40)
         self.radius_slider.setValue(10)
         options_layout.addWidget(radius_label)
         options_layout.addWidget(self.radius_slider)
 
         layout.addLayout(options_layout)
 
-        # Buttons Layout
         btn_layout = QHBoxLayout()
 
         self.btn_blur = QPushButton("🟦 تعتيم منطقة")
@@ -239,9 +219,8 @@ class MainControlWindow(QWidget):
 
         layout.addLayout(btn_layout)
 
-        # Opacity Slider
         opacity_layout = QHBoxLayout()
-        opacity_label = QLabel("درجة التعتيم:")
+        opacity_label = QLabel("الشفافية:")
         self.opacity_slider = QSlider(Qt.Horizontal)
         self.opacity_slider.setRange(50, 255)
         self.opacity_slider.setValue(220)
@@ -261,11 +240,10 @@ class MainControlWindow(QWidget):
         self.overlay = ScreenOverlay(self)
 
     def auto_target_window(self):
-        # Auto targets primary screen center area (Simulated Target Selection)
         screen_geo = QApplication.primaryScreen().geometry()
         target_rect = QRect(screen_geo.width() // 4, screen_geo.height() // 4, screen_geo.width() // 2, screen_geo.height() // 2)
         self.add_blur_item(target_rect)
-        self.status_label.setText("تم التحديد التلقائي للنافذة المركزية")
+        self.status_label.setText("تم التحديد التلقائي لمنتصف الشاشة")
 
     def add_blur_item(self, rect):
         style = self.style_combo.currentText()
@@ -284,7 +262,6 @@ class MainControlWindow(QWidget):
 
     def close_all(self):
         self.canvas.close()
-        self.tray_icon.hide()
         self.close()
 
 if __name__ == "__main__":
