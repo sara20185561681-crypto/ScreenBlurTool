@@ -21,14 +21,14 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install PySide6 pyinstaller
+        pip install PySide6 nuitka
 
-    - name: Build Executable
+    - name: Build Executable with Nuitka
       run: |
-        pyinstaller --noconfirm --onedir --windowed --collect-all PySide6 app.py
+        python -m nuitka --standalone --onefile --enable-plugin=pyside6 --windows-disable-console --output-filename=app.exe app.py
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: ScreenBlurTool-Windows
-        path: dist/appgit add .github/workflows/build.yml
+        path: app.exe
