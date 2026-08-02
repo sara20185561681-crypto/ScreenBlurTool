@@ -1,4 +1,4 @@
- import sys
+import sys
 from PySide6.QtCore import Qt, QRect, QPoint
 from PySide6.QtGui import QPainter, QPen, QColor, QBrush, QPainterPath
 from PySide6.QtWidgets import (QApplication, QWidget, QPushButton, QHBoxLayout, 
